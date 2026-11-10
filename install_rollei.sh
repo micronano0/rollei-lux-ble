@@ -4,9 +4,8 @@ set -Eeuo pipefail
 USER_NAME=pi
 HOME_DIR=/home/pi
 SERVICE_DIR=/etc/systemd/system
-ARCHIVE_NAME=Rollei_Fotobox_FUNKTIONIERT_20261109_221237.zip
 BASE_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-ARCHIVE="${1:-$BASE_DIR/$ARCHIVE_NAME}"
+SOURCE_DIR="${1:-$BASE_DIR}"
 BACKUP_DIR=""
 STAGING=""
 
@@ -24,23 +23,21 @@ id "$USER_NAME" &>/dev/null || fail "Benutzer pi fehlt."
 [[ ${VERSION_CODENAME:-} == trixie ]] ||
     fail "Nur Debian 13 (trixie) unterstützt."
 
-[[ -f "$ARCHIVE" ]] ||
-    fail "ZIP nicht gefunden: $ARCHIVE"
-
-command -v python3 >/dev/null ||
-    fail "Python 3 fehlt."
-
-if ! command -v unzip >/dev/null; then
-    apt-get update
-    DEBIAN_FRONTEND=noninteractive apt-get install -y unzip
-fi
+[[ -d "$SOURCE_DIR" ]] || fail "Quellverzeichnis fehlt: $SOURCE_DIR"
+command -v python3 >/dev/null || fail "Python 3 fehlt."
 
 STAGING=$(mktemp -d)
 trap '[[ -z "$STAGING" ]] || rm -rf -- "$STAGING"' EXIT
 
-unzip -q "$ARCHIVE" -d "$STAGING"
+# Dateien aus dem lokal heruntergeladenen GitHub-Repository übernehmen.
+# Die dynamische Statusdatei wird bewusst nicht installiert.
+for src in "$SOURCE_DIR"/*.py "$SOURCE_DIR"/rollei_effekte.json \
+           "$SOURCE_DIR"/rollei-auto-init.service "$SOURCE_DIR"/rollei-monitor.service; do
+    [[ -f "$src" ]] || continue
+    cp -- "$src" "$STAGING/$(basename "$src")"
+done
 
-echo "Prüfe Sicherungsarchiv ..."
+echo "Prüfe GitHub-Projektdateien ..."
 
 for f in \
     rollei_fotobox.py \
@@ -54,7 +51,7 @@ for f in \
     rollei-monitor.service
 do
     [[ -f "$STAGING/$f" ]] ||
-        fail "ZIP unvollständig: $f fehlt."
+        fail "Projektdatei fehlt: $f"
 done
 
 python3 - "$STAGING" <<'PY'
@@ -94,8 +91,7 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y \
     python3-dbus \
     python3-gi \
     rfkill \
-    sudo \
-    unzip
+    sudo
 
 command -v hcitool >/dev/null ||
     fail "hcitool nicht gefunden."
