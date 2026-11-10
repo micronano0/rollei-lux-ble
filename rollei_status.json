@@ -1,0 +1,22 @@
+{
+  "active_mode": "CCT",
+  "cct": {
+    "brightness": 15,
+    "kelvin": 5500
+  },
+  "hsi": {
+    "brightness": 50,
+    "hue": 0,
+    "saturation": 100
+  },
+  "eff": {
+    "brightness": 2,
+    "effekttyp": 0,
+    "effektwert": 100
+  },
+  "ble": {
+    "mode_code": 1,
+    "mode_data_1": 0,
+    "mode_data_2": 0
+  }
+}

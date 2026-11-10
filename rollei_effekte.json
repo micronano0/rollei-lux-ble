@@ -1,0 +1,58 @@
+{
+  "1": {
+    "parameter": 1,
+    "helligkeit": 5
+  },
+  "2": {
+    "parameter": 5,
+    "helligkeit": 1
+  },
+  "3": {
+    "parameter": 2,
+    "helligkeit": 1
+  },
+  "4": {
+    "parameter": 1,
+    "helligkeit": 1
+  },
+  "5": {
+    "parameter": 2,
+    "helligkeit": 36
+  },
+  "6": {
+    "parameter": 2,
+    "helligkeit": 50
+  },
+  "7": {
+    "parameter": 3,
+    "helligkeit": 14
+  },
+  "8": {
+    "parameter": 1,
+    "helligkeit": 1
+  },
+  "9": {
+    "parameter": 3,
+    "helligkeit": 1
+  },
+  "10": {
+    "parameter": 3,
+    "helligkeit": 4
+  },
+  "11": {
+    "parameter": 1,
+    "helligkeit": 8
+  },
+  "12": {
+    "parameter": 1,
+    "helligkeit": 8
+  },
+  "13": {
+    "parameter": 2,
+    "helligkeit": 1
+  },
+  "cct_licht": {
+    "kelvin": 5500,
+    "helligkeit": 15
+  }
+}
