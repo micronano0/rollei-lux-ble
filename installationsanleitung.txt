@@ -1,88 +1,141 @@
-Raspberry Pi mit Debian 13 (trixie).
-Benutzer pi 
-Ordner Rollei_Installation nach /home/pi kopieren.
-Installation starten: 			sudo bash ~/Rollei_Installation/install_rollei.sh
+
+Rollei LUX Compact RGB LED – Installation und Schnellanleitung
+=============================================================
+
+1. Voraussetzungen
+------------------
+- Raspberry Pi mit Debian 13 (trixie)
+- Linux-Benutzer: pi, Home-Verzeichnis: /home/pi
+- Bluetooth-LE-Adapter (hci0)
+- Internetverbindung für Git und die benötigten Debian-Pakete
+- Öffentliches GitHub-Repository: https://github.com/micronano0/rollei-lux-ble
+ 
+
+2. Projekt von GitHub herunterladen
+----------------------------------
+Als Benutzer pi im Terminal ausführen:
+
+  sudo apt-get update
+  sudo apt-get install -y git
 
 
------------------------------------------------------------------------------------
-Rollei LUX Compact RGB LED – Schnellanleitung
+  cd /home/pi
+  git clone https://github.com/micronano0/rollei-lux-ble.git
 
-Steuerung über Raspberry Pi (italiano-box) per Bluetooth Low Energy (BLE).
+Falls das Verzeichnis /home/pi/rollei-lux-ble bereits existiert, nicht
+blind erneut klonen oder überschreiben. Vorhandene Änderungen zuerst prüfen.
 
-1. Effekte starten
+Alternativ kann das öffentliche Repository auf GitHub über
+Code > Download ZIP heruntergeladen und nach /home/pi entpackt werden.
+Alle Projektdateien müssen dabei gemeinsam im Verzeichnis mit
+install_rollei.sh liegen. 
 
-Allgemeiner Befehl:	python3 ~/rollei_effekte_auto.py EFFEKT VARIANTE HELLIGKEIT
+3. Installation starten
+-----------------------
+Nach erfolgreichem git clone:
 
+  cd /home/pi/rollei-lux-ble
+  sudo bash ./install_rollei.sh
 
-Parameter		Bedeutung								Werte
-EFFEKT			Nummer des Effekts						1–13
-VARIANTE		Effektvariante bzw. Geschwindigkeit		1–3
-HELLIGKEIT		Helligkeit in Prozent					1–100
+Das Skript verwendet die einzelnen Dateien aus diesem Verzeichnis. 
+Es prüft Debian 13 und den Benutzer pi, installiert
+benötigte Pakete, sichert vorhandene Rollei-Dateien, richtet systemd-Dienste
+ein und führt einen Lampentest durch. Es verändert das laufende System;
+daher vor der Ausführung die Skriptfassung prüfen und Sicherungen behalten.
+Die Datei rollei_status.json wird vom angepassten Installer nicht übernommen,
+da sie vom Monitor neu erzeugt wird.
+
+ACHTUNG: Der Installer ist für eine Neuinstallation vorgesehen. Auf einem
+bereits funktionierenden Raspberry System nicht ohne vorherige Prüfung
+erneut ausführen.
+
+4. Rollei LUX Compact RGB LED – Schnellanleitung
+------------------------------------------------
+Steuerung über Raspberry Pi per Bluetooth Low Energy (BLE).
+Alle normalen Steuerbefehle als Benutzer pi ausführen, ohne sudo.
+
+Effekte starten:
+
+  python3 ~/rollei_effekte_auto.py EFFEKT VARIANTE HELLIGKEIT
+
+Parameter       Bedeutung                                Werte
+EFFEKT          Nummer des Effekts                       1–13
+VARIANTE        Effektvariante bzw. Geschwindigkeit      1–3
+HELLIGKEIT      Helligkeit in Prozent                    1–100
 
 Beispiele:
-Feuerwerk, Variante 3, 50 %: 	python3 ~/rollei_effekte_auto.py 2 3 50
-Leuchtfeuer, Variante 1, 75 %: 	python3 ~/rollei_effekte_auto.py 5 1 75
+Feuerwerk, Variante 3, 50 %:
+  python3 ~/rollei_effekte_auto.py 2 3 50
+Leuchtfeuer, Variante 1, 75 %:
+  python3 ~/rollei_effekte_auto.py 5 1 75
 
+Übersicht aller Effekte:
+  1  Feuer
+  2  Feuerwerk
+  3  CCT-Wechsel
+  4  Pulsieren
+  5  Leuchtfeuer
+  6  TV
+  7  Party
+  8  Explosion
+  9  Kaputte Glühbirne
+ 10  Schweißen
+ 11  Stroboskop
+ 12  Blitz
+ 13  SOS
 
-Übersicht aller Effekte
-Nr.	Effekt
-1	Feuer
-2	Feuerwerk
-3	CCT-Wechsel
-4	Pulsieren
-5	Leuchtfeuer
-6	TV
-7	Party
-8	Explosion
-9	Kaputte Glühbirne
-10	Schweißen
-11	Stroboskop
-12	Blitz
-13	SOS
+5. CCT-Licht für die Fotobox
+---------------------------
+Für die normale Fotobox-Beleuchtung rollei_fotobox.py verwenden.
 
+Licht einschalten – 5600 Kelvin, 50 %:
+  python3 ~/rollei_fotobox.py on 5600 50
+Licht mit zuletzt gespeicherten Werten einschalten:
+  python3 ~/rollei_fotobox.py on
+Licht ausschalten:
+  python3 ~/rollei_fotobox.py off
+Aktuelle CCT-Einstellungen speichern:
+  python3 ~/rollei_fotobox.py save
+Gespeicherte Einstellungen anzeigen:
+  python3 ~/rollei_fotobox.py status
 
+Änderungen am Gerät bzw. durch Befehle werden automatisch gespeichert.
 
-2. CCT-Licht für die Fotobox
-Für die normale Fotobox-Beleuchtung verwenden wir rollei_fotobox.py.
-
-Licht einschalten – 5600 Kelvin, 50 %: 	python3 ~/rollei_fotobox.py on 5600 50
-Licht ausschalten:						python3 ~/rollei_fotobox.py off
-
-Aktuelle CCT-Einstellungen speichern:	python3 ~/rollei_fotobox.py save
-(Änderungen am Gerät bzw. durch Befehle werden automatisch gespeichert)
-
-Gespeicherte Einstellungen anzeigen:	python3 ~/rollei_fotobox.py status
-
-
-3. Alternative CCT-Steuerung
-Auch das Effektskript unterstützt CCT: 	python3 ~/rollei_effekte_auto.py on 5600 50
-CCT-Licht auf 0 % dimmen:				python3 ~/rollei_effekte_auto.py off
-
+6. Alternative CCT-Steuerung
+---------------------------
+CCT-Licht einschalten:
+  python3 ~/rollei_effekte_auto.py on 5600 50
+CCT-Licht auf 0 % dimmen:
+  python3 ~/rollei_effekte_auto.py off
 
 Die gespeicherten CCT-Werte bleiben beim Ausschalten erhalten.
 
-4. Rollei-Monitor kontrollieren
-Aktuellen Lampenzustand anzeigen:		python3 -m json.tool ~/rollei_status.json
+7. Rollei-Monitor kontrollieren
+------------------------------
+Aktuellen Lampenzustand anzeigen:
+  python3 -m json.tool ~/rollei_status.json
 
+Darin werden aktiver Modus (CCT, HSI oder EFF), Helligkeit und
+BLE-Effektdaten angezeigt.
 
-Darin werden der aktive Modus (CCT, HSI oder EFF), die Helligkeit und die BLE-Effektdaten angezeigt.
-5. Hinweise zum Betrieb
+8. Hinweise zum Betrieb
+-----------------------
 - Die Rollei muss eingeschaltet und in Bluetooth-Reichweite sein.
-- Bluetooth am Smartphone möglichst deaktivieren, damit keine konkurrierende Steuerung entsteht.
-- Ein Effektwechsel kann gelegentlich erst beim zweiten Aufruf korrekt übernommen werden.
-- Die beiden systemd-Dienste rollei-auto-init und rollei-monitor starten automatisch.
+- Bluetooth am Smartphone möglichst deaktivieren, damit keine konkurrierende
+  Steuerung entsteht.
+- Ein Effektwechsel kann gelegentlich erst beim zweiten Aufruf korrekt
+  übernommen werden.
+- Die systemd-Dienste rollei-auto-init und rollei-monitor starten automatisch.
+- Ein erfolgreicher Softwarebefehl garantiert nicht zwingend eine sichtbare
+  Reaktion der Lampe.
 
+Wichtige Fotobox-Befehle:
+  python3 ~/rollei_fotobox.py on 5600 50
+  python3 ~/rollei_fotobox.py on
+  python3 ~/rollei_fotobox.py off
 
-Für die Fotobox reichen normalerweise diese drei Befehle:
-# Fotobox-Licht EIN
-python3 ~/rollei_fotobox.py on 5600 50  (Beispielwerte)
-python3 ~/rollei_fotobox.py on			startet mit zuletzt eingestellten Werten
-
-# Fotobox-Licht AUS
-python3 ~/rollei_fotobox.py off
-
-
-Alle Befehle werden als Benutzer pi ausgeführt. sudo ist für die normale Lampensteuerung nicht erforderlich.
-
-
+9. Versionen und Sicherung
+--------------------------
+GitHub-Repository: https://github.com/micronano0/rollei-lux-ble
+Erster gesicherter GitHub-Release: v1.0.0
 
