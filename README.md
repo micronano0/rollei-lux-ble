@@ -1,5 +1,7 @@
 # Rollei LUX Compact RGB LED – BLE Control
 
+![Rollei LUX Compact RGB LED](rollei_lux_compact_rgb.jpg)
+
 Python-based Bluetooth Low Energy (BLE) control for the Rollei LUX Compact RGB LED using a Raspberry Pi.
 
 ## Features
