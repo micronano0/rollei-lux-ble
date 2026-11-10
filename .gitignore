@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+bleak-venv/
+
+# Logs
+*.log
+
+# Temporäre Dateien
+*.tmp
+*.bak
+*~
+
+# Betriebssystem
+.DS_Store
+Thumbs.db
