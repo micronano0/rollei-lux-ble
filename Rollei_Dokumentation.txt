@@ -1,0 +1,552 @@
+============================================================
+ROLLEI LUX COMPACT RGB LED
+INSTALLATION – BEDIENUNG – TESTS – FEHLERSUCHE
+============================================================
+
+Referenzsystem: italiano-box
+Betriebssystem: Debian 13 (trixie)
+Benutzer: pi
+Verzeichnis: /home/pi
+Bluetooth-Adapter: hci0
+Stand: 09.11.2026
+
+============================================================
+1. INSTALLATION UND SICHERUNG
+============================================================
+
+Installationsverzeichnis:
+/home/pi/Rollei_Installation/
+
+Enthalten:
+- install_rollei.sh
+- Rollei_Fotobox_FUNKTIONIERT_20261109_221237.zip
+- Rollei_Systemreferenz_FUNKTIONIERT_20261109.txt
+- Rollei_Dokumentation.txt
+
+Installation auf einem frisch eingerichteten Raspberry Pi:
+
+cd /home/pi/Rollei_Installation
+sudo bash install_rollei.sh
+
+Voraussetzungen:
+- Debian 13 (trixie)
+- Benutzer pi mit Homeverzeichnis /home/pi
+- Internetverbindung für die Paketinstallation
+- Bluetooth-Adapter hci0 mit BLE-Unterstützung
+
+ACHTUNG:
+Der Installer ist noch nicht auf einem frisch
+installierten Raspberry Pi vollständig getestet.
+Nicht auf der funktionierenden italiano-box ausführen.
+
+============================================================
+2. WICHTIGE DATEIEN
+============================================================
+
+/home/pi/rollei_fotobox.py
+  Fotobox-Steuerung mit Hintergrundverarbeitung.
+
+/home/pi/rollei_effekte_auto.py
+  Zentrale Steuerung der 13 Effekte sowie CCT ON/OFF.
+
+/home/pi/rollei_on_off_eff2.py
+  BLE-Paketaufbau und Advertising.
+
+/home/pi/rollei_monitor.py
+  Überwachung der BLE-Werbung.
+
+/home/pi/rollei_auto_init.py
+  Automatische Initialisierung.
+
+/home/pi/rollei_status.json
+  Vom Monitor ermittelter Zustand.
+
+/home/pi/rollei_effekte.json
+  Gespeicherte Effekt- und CCT-Einstellungen.
+
+/home/pi/rollei_effekt_sperre.py
+  Sperrmechanismus zur Koordination von BLE-Befehlen.
+
+/etc/systemd/system/rollei-auto-init.service
+/etc/systemd/system/rollei-monitor.service
+  Automatisch gestartete Hintergrunddienste.
+
+============================================================
+3. FOTObOX-STEUERUNG
+============================================================
+
+Die folgenden Aufrufe verwenden rollei_fotobox.py.
+
+Licht mit gespeicherten Werten einschalten:
+
+python3 ~/rollei_fotobox.py on
+
+Licht mit 5600 Kelvin und 50 Prozent einschalten:
+
+python3 ~/rollei_fotobox.py on 5600 50
+
+Aktuelle CCT-Einstellungen speichern:
+
+python3 ~/rollei_fotobox.py save
+
+Licht ausschalten:
+
+python3 ~/rollei_fotobox.py off
+
+Status anzeigen:
+
+python3 ~/rollei_fotobox.py status
+
+Besonderheit:
+Die Fotobox-Steuerung arbeitet mit einer Hintergrund-
+verarbeitung, damit Aufrufe nicht mehrere Sekunden
+auf die BLE-Übertragung warten müssen.
+
+Die Befehle werden koordiniert abgearbeitet.
+
+============================================================
+4. CCT-STEUERUNG
+============================================================
+
+Zentrale Steuerung:
+
+python3 ~/rollei_effekte_auto.py on
+
+Licht mit Kelvin und Helligkeit:
+
+python3 ~/rollei_effekte_auto.py on 5600 50
+
+Licht ausschalten:
+
+python3 ~/rollei_effekte_auto.py off
+
+Bekannte Besonderheit:
+
+Zum zuverlässigen Einschalten nach OFF werden
+zwei BLE-Befehle benötigt:
+
+1. CCT-Kombinationsbefehl 0x0C
+2. Helligkeitsbefehl 0x06
+
+Der OFF-Befehl setzt die Helligkeit auf 0 Prozent,
+ohne die gespeicherte Helligkeit zu überschreiben.
+
+============================================================
+5. DIE 13 EFFEKTE
+============================================================
+
+Aufrufschema:
+
+python3 ~/rollei_effekte_auto.py EFFEKT RATE [VARIANTE]
+
+Beispiel:
+
+python3 ~/rollei_effekte_auto.py 8 2
+
+Effektübersicht:
+
+01 Feuer                 BLE-Code 0x03
+02 Feuerwerk             BLE-Code 0x09
+03 CCT-Wechsel           BLE-Code 0x13
+04 Pulsieren             BLE-Code 0x04
+05 Leuchtfeuer           BLE-Code 0x0C
+06 TV                    BLE-Code 0x0A
+07 Party                 BLE-Code 0x0B
+08 Explosion             BLE-Code 0x0E
+09 Kaputte Glühbirne     BLE-Code 0x05
+10 Schweißen             BLE-Code 0x0D
+11 Stroboskop            BLE-Code 0x06
+12 Blitz                 BLE-Code 0x07
+13 SOS                   BLE-Code 0x0F
+
+Die Namen entsprechen den gesicherten Effektdateien.
+Die konkreten Varianten und Sonderparameter werden
+durch die jeweiligen Programme bestimmt.
+
+Rate:
+1 bis 5
+
+Bekannte Zuordnung:
+BLE-Rate = 2 * Rate - 1
+
+Beispiele:
+Rate 1 -> 0x01
+Rate 2 -> 0x03
+Rate 3 -> 0x05
+Rate 4 -> 0x07
+Rate 5 -> 0x09
+
+Achtung:
+Einige Effekte verwenden zusätzliche Varianten-
+oder Farbparameter. Die Rate-Zuordnung ist deshalb
+nicht für jedes Payload-Byte pauschal anwendbar.
+
+============================================================
+6. BEKANNTE BESONDERHEITEN
+============================================================
+
+Effekt 2 (Feuerwerk):
+Der korrekte Start erfordert einen Wechsel über CCT.
+Ein Wechsel über HSI führte bei früheren Tests
+nicht zuverlässig zum gewünschten Effekt.
+
+Effekt 6 (TV):
+Funktioniert ohne zusätzliche HSI-/Kelvin-Schritte.
+Anschließend wird der Helligkeitsbefehl gesendet.
+
+Effekt 8 (Explosion):
+Funktioniert ohne zusätzliche HSI-/Kelvin-Schritte.
+
+Effekt 9 (Kaputte Glühbirne):
+Bekannte Varianten:
+1 = gelbe LEDs
+2 = gelbe und weiße LEDs
+3 = weiße LEDs
+
+Für einzelne Effekte sind besondere Umschaltfolgen
+erforderlich. Die gesicherten Programme enthalten
+die zuletzt funktionierende Steuerungslogik.
+
+============================================================
+7. BLUETOOTH UND BLE
+============================================================
+
+Adapter: hci0
+
+Bluetooth-Status:
+
+bluetoothctl show
+
+Controller-Informationen:
+
+sudo btmgmt --index 0 info
+
+Bluetooth einschalten:
+
+bluetoothctl power on
+
+Bluetooth-Dienst prüfen:
+
+systemctl status bluetooth.service
+
+Bluetooth-Dienst starten:
+
+sudo systemctl start bluetooth.service
+
+Bluetooth-Dienst für Autostart aktivieren:
+
+sudo systemctl enable bluetooth.service
+
+Auf dem Referenzsystem:
+- powered aktiv
+- LE aktiv
+- Advertising unterstützt
+- Secure Connections aktiv
+- Adapter hci0
+
+Die BlueZ-Konfiguration verwendet die Standardwerte.
+Spezielle Änderungen an /etc/bluetooth/main.conf
+sind nicht erforderlich.
+
+============================================================
+8. SYSTEMD-DIENSTE
+============================================================
+
+rollei-auto-init.service
+rollei-monitor.service
+
+Beide Dienste:
+- laufen als Benutzer pi
+- verwenden /home/pi
+- starten nach einer Wartezeit von 30 Sekunden
+- werden bei Fehlern automatisch neu gestartet
+
+Status:
+
+systemctl status rollei-auto-init.service
+
+systemctl status rollei-monitor.service
+
+Aktivierungsstatus:
+
+systemctl is-enabled rollei-auto-init.service
+
+systemctl is-enabled rollei-monitor.service
+
+Laufstatus:
+
+systemctl is-active rollei-auto-init.service
+
+systemctl is-active rollei-monitor.service
+
+Logs anzeigen:
+
+journalctl -u rollei-auto-init.service -n 50 --no-pager
+
+journalctl -u rollei-monitor.service -n 50 --no-pager
+
+Logs live verfolgen:
+
+journalctl -u rollei-monitor.service -f
+
+Dienste neu starten:
+
+sudo systemctl restart rollei-auto-init.service
+
+sudo systemctl restart rollei-monitor.service
+
+============================================================
+9. KONFIGURATION UND STATUS
+============================================================
+
+Gespeicherte Effekte und CCT-Werte:
+
+python3 -m json.tool ~/rollei_effekte.json
+
+Vom Monitor erkannter Zustand:
+
+python3 -m json.tool ~/rollei_status.json
+
+Die Statusdatei ist eine Momentaufnahme und kann
+sich während des Betriebs laufend verändern.
+
+============================================================
+10. BERECHTIGUNGEN
+============================================================
+
+Benutzergruppen prüfen:
+
+id pi
+
+Sudo-Regel:
+
+/etc/sudoers.d/rollei
+
+Inhalt:
+
+pi ALL=(root) NOPASSWD: /usr/bin/hcitool
+
+Die Rollei-Steuerung benötigt keine pauschale
+NOPASSWD-ALL-Berechtigung.
+
+Sudo-Konfiguration prüfen:
+
+sudo visudo -cf /etc/sudoers.d/rollei
+
+============================================================
+11. FUNKTIONSTESTS
+============================================================
+
+Test 1 – Bluetooth:
+
+sudo btmgmt --index 0 info
+
+Erwartet:
+current settings enthält powered und le.
+
+Test 2 – Hintergrunddienste:
+
+systemctl is-active rollei-auto-init.service
+systemctl is-active rollei-monitor.service
+
+Erwartet:
+active
+active
+
+Test 3 – Python-Bibliothek:
+
+python3 -c "import bleak; print('Bleak OK')"
+
+Test 4 – Gespeicherte Einstellungen:
+
+python3 ~/rollei_fotobox.py status
+
+Test 5 – Licht einschalten:
+
+python3 ~/rollei_fotobox.py on 5600 50
+
+Test 6 – Licht ausschalten:
+
+python3 ~/rollei_fotobox.py off
+
+Test 7 – Effekt 8:
+
+python3 ~/rollei_effekte_auto.py 8 2
+
+HINWEIS:
+Tests 5 bis 7 verändern den Lampenzustand.
+Sie nur durchführen, wenn die Lampe eingeschaltet
+und ein aktiver Funktionstest erwünscht ist.
+
+============================================================
+12. FEHLERSUCHE
+============================================================
+
+Problem: Bluetooth-Adapter fehlt
+
+Prüfen:
+
+bluetoothctl list
+sudo btmgmt info
+systemctl status bluetooth.service
+
+Problem: Rollei reagiert nicht
+
+Prüfen:
+- Lampe eingeschaltet?
+- Bluetooth am Smartphone eventuell verbunden?
+- Adapter hci0 eingeschaltet?
+- Dienste aktiv?
+- BLE-Werbung der Lampe erkennbar?
+- Sperrmechanismus aktiv?
+
+Problem: Effekt startet falsch
+
+Prüfen:
+- richtiger Effektcode?
+- richtige Rate?
+- richtige Variante?
+- Wechsel über CCT erforderlich?
+- ausreichend lange Advertising-Sendedauer?
+
+Problem: CCT bleibt nach OFF dunkel
+
+Der kombinierte CCT-Befehl 0x0C alleine reicht
+nach OFF möglicherweise nicht aus.
+
+Zusätzlich muss der Helligkeitsbefehl 0x06
+mit der gewünschten Helligkeit gesendet werden.
+
+Problem: Dienst startet nicht
+
+journalctl -u rollei-auto-init.service -n 100 --no-pager
+
+journalctl -u rollei-monitor.service -n 100 --no-pager
+
+============================================================
+13. BLUETOOTH-PROTOKOLLANALYSE MIT WIRESHARK
+============================================================
+
+Wireshark dient zur Analyse der BLE-Advertising-
+Pakete und zur Ermittlung unbekannter Rollei-Befehle.
+
+Bewährter Wireshark-Anzeigefilter:
+
+((btle.advertising_address == 20:26:04:08:05:37) || (frame contains 43:4F:4C:42:4F:52))
+
+Bedeutung:
+
+btle.advertising_address == 20:26:04:08:05:37
+
+Zeigt BLE-Pakete mit der angegebenen Advertising-
+Adresse. Die Adresse kann sich bei anderen Geräten
+oder Betriebszuständen unterscheiden.
+
+frame contains 43:4F:4C:42:4F:52
+
+Sucht nach der Bytefolge:
+
+43 4F 4C 42 4F 52
+
+Diese entspricht dem ASCII-Text:
+
+COLBOR
+
+Durch die ODER-Verknüpfung werden Pakete angezeigt,
+die mindestens eine der beiden Bedingungen erfüllen.
+
+WICHTIG:
+Dies ist ein Wireshark-Anzeigefilter (Display Filter),
+kein Capture Filter.
+
+Vorgehensweise:
+
+1. BLE-Aufzeichnung mit einem geeigneten
+   Bluetooth-Sniffer erstellen oder öffnen.
+
+2. Den oben angegebenen Filter in die
+   Wireshark-Filterzeile einfügen.
+
+3. Einen bestimmten Modus an der Lampe auswählen.
+
+4. Die zugehörigen Advertising-Pakete untersuchen.
+
+5. Anschließend nur einen Parameter ändern,
+   beispielsweise Rate 2 auf Rate 3.
+
+6. Die neuen Pakete mit den vorherigen vergleichen.
+
+7. Geänderte Payload-Bytes dokumentieren.
+
+8. Die vermutete Byte-Zuordnung mit weiteren
+   Einstellungen überprüfen.
+
+9. Den ermittelten Befehl gezielt mit der
+   Rollei-Steuerung testen.
+
+Bekannter Advertising-Präfix:
+
+07 09 43 4F 4C 42 4F 52
+02 0A 01
+11 07 1E 0E
+
+Bekannter Beginn der Herstellerdaten:
+
+A7 DC
+
+Die weiteren Bytes enthalten dynamische
+Informationen und Steuerdaten.
+
+Die Steuerung verwendet Legacy BLE Advertising
+mit maximal 31 Byte Advertising-Daten.
+
+Bekannte Steuerbefehle:
+
+0x0C – kombinierter CCT-Befehl
+0x06 – Helligkeitssteuerung
+
+Achtung:
+Diese Befehle sind von den Effektcodes zu
+unterscheiden. Ein identischer Zahlenwert kann
+je nach Position im Paket eine andere Bedeutung
+haben.
+
+Bei der Fehlersuche besonders beachten:
+
+- CCT-, HSI- und EFF-Modi unterscheiden.
+- Umschaltreihenfolge dokumentieren.
+- Rate und Varianten getrennt untersuchen.
+- Advertising-Dauer berücksichtigen.
+- Nicht aus einem einzelnen Paket auf die
+  vollständige Funktion schließen.
+
+============================================================
+14. REFERENZSYSTEM VERGLEICHEN
+============================================================
+
+Referenzdatei:
+
+/home/pi/Rollei_Installation/
+Rollei_Systemreferenz_FUNKTIONIERT_20261109.txt
+
+Sie dokumentiert den funktionierenden Zustand
+der italiano-box.
+
+Bei Problemen auf einem neu installierten
+Raspberry Pi vergleichen:
+
+- Betriebssystem und Kernel
+- BlueZ-Version
+- Python-Version und Bleak
+- Bluetooth-Controller-Einstellungen
+- Bluetooth-Dienst
+- Rollei-Services
+- sudo-Berechtigungen
+- SHA256-Prüfsummen der Rollei-Programme
+- gespeicherte Effekt- und CCT-Einstellungen
+
+Die Referenzdatei nicht überschreiben.
+
+============================================================
+ENDE DER DOKUMENTATION
+============================================================
