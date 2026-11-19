@@ -1,5 +1,5 @@
 # Rollei LUX Compact RGB LED – BLE-Steuerung
-
+![Rollei LUX Compact RGB LED](rollei_lux_compact_rgb.jpg)
 Steuerung der Rollei LUX Compact RGB LED über Bluetooth Low Energy (BLE)
 mit einem Raspberry Pi unter Debian Linux.
 
